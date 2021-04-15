@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
 const cors = require('cors')
+const Reminder = require('./models/reminder')
 
 app.use(cors())
 app.use(express.static('build'))
@@ -11,6 +12,14 @@ const generateId = () => {
     const rngId = Math.floor(Math.random() * 1001010);
     return rngId;
 }
+const formatReminder = (reminder) => {
+  return {
+    name: reminder.name,
+    timestamp: reminder.timestamp,
+    id: reminder._id
+  }
+}
+
 let Reminders = [
     {
             "name":"Buy some eggs",
@@ -58,11 +67,16 @@ app.get('/notes', (req, res) => {
     res.json(notes)
   })
 app.delete('/api/reminders/:id', (request, response) => {
-    const id = Number(request.params.id)
-    Reminders = Reminders.filter(reminder => reminder.id !== id)
-  
-    response.status(204).end()
+    console.log(`deleted ${request.params.id}`)
+    Reminder.findByIdAndRemove(request.params.id)
+      .then(result => {
+        response.status(204).end()
+      })
+      .catch(error => {
+        response.status(400).send({ error: 'bad id' })
+      })
   })
+  
 app.post('/api/reminders', (request, response) => {
     const body = request.body
   
@@ -73,29 +87,37 @@ app.post('/api/reminders', (request, response) => {
         return response.status(400).json({error: 'timestamp missing'})
       }
   
-    const reminder = {
+    const reminder = new Reminder ({
       name: body.content,
-      timestamp: new Date(),
-      id: generateId()
-    }
-  
-    Reminders = Reminders.concat(reminder)
-  
-    response.json(reminder)
-  }) 
-app.get('/api/reminders/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const reminder = Reminders.find(reminder => reminder.id === id)
-        if ( reminder ) {
-          response.json(reminder)
-        } else {
-          response.status(404).end()
-        }
+      timestamp: body.timestamp,
+      //id: generateId()
     })
-
-app.get('/api/reminders', (req, res) => {
-    res.json(Reminders)
+  
+    reminder
+          .save()
+          .then(savedReminder => {
+           response.json(formatReminder(savedReminder))
+    })
+  }) 
+  app.get('/api/reminders', (req, res) => {
+    Reminder
+      .find({})
+      .then(reminders => {
+         res.json(reminders.map(formatReminder))
+    })
   })
+  app.get('/api/reminders/:id', (request, response) => {
+    const id = request.params.id
+    Reminder.findById(id)
+      .then(result => {
+        response.json(formatReminder(result))
+      })
+      .catch(error => {
+        console.log(error)
+      })
+  })
+  
+
 const PORT = process.env.PORT || 3001
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
