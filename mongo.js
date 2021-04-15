@@ -32,7 +32,7 @@ else if (process.argv.length === 4) {
 		timestamp: process.argv[3]
 	})
 
-	console.log('adding reminder ' + reminder.name + ' ' + reminder.timestamp + ' to the reminder database')
+	console.log('add reminder ' + reminder.name + ' ' + reminder.timestamp + ' to the database')
 
 	reminder
 		.save()
@@ -42,7 +42,7 @@ else if (process.argv.length === 4) {
 		})
 }
 else {
-	console.log('usage: node mongo.js "reminder" <timestamp>')
+	console.log('whathappened: node mongo.js "reminder" <timestamp>')
 
 }
 
